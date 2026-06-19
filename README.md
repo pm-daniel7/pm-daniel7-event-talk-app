@@ -4,6 +4,9 @@ A modern, responsive web application built with **Python Flask** and **plain van
 
 > 🎓 **Course Project Milestone**  
 > This project was developed and completed as part of a **5-day intensive course** focusing on modern web development, API integration, and user experience design.
+>
+> 🤖 **Agentic Engineering & Vibe Coding**  
+> Built and polished using agentic software engineering and vibe-coding practices, combining prompt-driven generation with iterative refinement cycles.
 
 ---
 
