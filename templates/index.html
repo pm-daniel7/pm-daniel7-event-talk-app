@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BigQuery Release Notes Explorer & Tweet Composer</title>
+    <meta name="description" content="Stay up to date with Google Cloud BigQuery release notes. Easily browse, filter, search, select updates, and tweet them to your network.">
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-container">
+            <div class="brand">
+                <div class="logo-wrapper">
+                    <!-- Google Cloud BigQuery themed SVG Logo -->
+                    <svg class="bq-logo" viewBox="0 0 24 24" width="28" height="28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M19.25 10H4.75C3.78 10 3 10.78 3 11.75V19.25C3 20.22 3.78 21 4.75 21H19.25C20.22 21 21 20.22 21 19.25V11.75C21 10.78 20.22 10 19.25 10Z" fill="url(#grad1)"/>
+                        <path d="M16 14H8V17H16V14Z" fill="#ffffff"/>
+                        <path d="M12 2L4 6V9H20V6L12 2Z" fill="url(#grad2)"/>
+                        <defs>
+                            <linearGradient id="grad1" x1="3" y1="15.5" x2="21" y2="15.5" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#4285F4"/>
+                                <stop offset="1" stop-color="#34A853"/>
+                            </linearGradient>
+                            <linearGradient id="grad2" x1="4" y1="5.5" x2="20" y2="5.5" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#EA4335"/>
+                                <stop offset="1" stop-color="#FBBC05"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <div class="brand-text">
+                    <h1>BigQuery Release Notes Hub</h1>
+                    <p class="brand-subtitle">Google Cloud Feed Explorer</p>
+                </div>
+            </div>
+            
+            <div class="header-actions">
+                <span id="last-updated-text" class="status-timestamp">Checking feed status...</span>
+                <button id="btn-refresh" class="btn-refresh-feed" aria-label="Refresh release notes">
+                    <svg class="icon-spin" id="refresh-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                    </svg>
+                    <span>Refresh</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="app-main">
+        <div class="main-grid">
+            <!-- Feed Section -->
+            <section class="feed-section">
+                <!-- Toolbar: Search & Filters -->
+                <div class="toolbar">
+                    <div class="search-box">
+                        <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"/>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input type="text" id="search-input" placeholder="Search updates (e.g. Gemini, CDC, vectors)..." aria-label="Search updates">
+                        <button id="btn-clear-search" class="btn-clear" style="display: none;" aria-label="Clear search">×</button>
+                    </div>
+                    
+                    <div class="filter-wrapper">
+                        <span class="filter-label">Filter by type:</span>
+                        <div class="filter-tabs" id="filter-tabs-container">
+                            <button class="filter-tab active" data-type="all" id="filter-tab-all">All</button>
+                            <button class="filter-tab" data-type="feature" id="filter-tab-feature">Features</button>
+                            <button class="filter-tab" data-type="announcement" id="filter-tab-announcement">Announcements</button>
+                            <button class="filter-tab" data-type="change" id="filter-tab-change">Changes</button>
+                            <button class="filter-tab" data-type="issue" id="filter-tab-issue">Issues</button>
+                            <button class="filter-tab" data-type="breaking" id="filter-tab-breaking">Breaking</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feed Content Area -->
+                <div class="feed-container">
+                    <!-- Error State -->
+                    <div id="error-container" class="state-container error-state" style="display: none;">
+                        <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="8" x2="12" y2="12"/>
+                            <line x1="12" y1="16" x2="12.01" y2="16"/>
+                        </svg>
+                        <h3>Failed to Load Feed</h3>
+                        <p id="error-message">Check your connection and try again.</p>
+                        <button id="btn-retry" class="btn-action">Retry Fetch</button>
+                    </div>
+
+                    <!-- Loading State (Skeleton) -->
+                    <div id="loading-container" class="skeleton-container">
+                        <div class="skeleton-card">
+                            <div class="skeleton-header">
+                                <div class="skeleton-title"></div>
+                                <div class="skeleton-tag"></div>
+                            </div>
+                            <div class="skeleton-body">
+                                <div class="skeleton-line"></div>
+                                <div class="skeleton-line"></div>
+                                <div class="skeleton-line"></div>
+                            </div>
+                        </div>
+                        <div class="skeleton-card">
+                            <div class="skeleton-header">
+                                <div class="skeleton-title"></div>
+                                <div class="skeleton-tag"></div>
+                            </div>
+                            <div class="skeleton-body">
+                                <div class="skeleton-line"></div>
+                                <div class="skeleton-line"></div>
+                            </div>
+                        </div>
+                        <div class="skeleton-card">
+                            <div class="skeleton-header">
+                                <div class="skeleton-title"></div>
+                                <div class="skeleton-tag"></div>
+                            </div>
+                            <div class="skeleton-body">
+                                <div class="skeleton-line"></div>
+                                <div class="skeleton-line"></div>
+                                <div class="skeleton-line"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div id="empty-container" class="state-container empty-state" style="display: none;">
+                        <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="8" y1="12" x2="16" y2="12"/>
+                        </svg>
+                        <h3>No Releases Found</h3>
+                        <p>No release notes match your active filters or search terms.</p>
+                        <button id="btn-reset-filters" class="btn-action">Reset Filters</button>
+                    </div>
+
+                    <!-- Feed List -->
+                    <div id="releases-list" class="releases-list" style="display: none;">
+                        <!-- Releases rendered dynamically via Javascript -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tweet Panel Section -->
+            <aside class="composer-section" id="composer-aside" aria-label="Tweet Composer Panel">
+                <div class="composer-sticky">
+                    <!-- Dynamic Title/Header -->
+                    <div class="composer-header">
+                        <h2>Tweet Composer</h2>
+                        <p class="composer-help">Select any release note from the feed on the left to prepare and share a tweet.</p>
+                    </div>
+
+                    <!-- Composer Form (active or inactive) -->
+                    <div id="composer-empty-state" class="composer-empty">
+                        <div class="x-logo-outline">
+                            <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
+                                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                            </svg>
+                        </div>
+                        <p>No release note selected.</p>
+                        <span class="instruction-bubble">Click on a release card to generate a post automatically!</span>
+                    </div>
+
+                    <div id="composer-content-state" class="composer-card" style="display: none;">
+                        <div class="selected-note-preview">
+                            <div class="preview-meta">
+                                <span id="preview-type-badge" class="badge">Feature</span>
+                                <span id="preview-date-text">June 17, 2026</span>
+                            </div>
+                            <blockquote id="preview-snippet-text" class="preview-quote">
+                                <!-- Snippet of the original content -->
+                            </blockquote>
+                        </div>
+
+                        <div class="composer-body">
+                            <div class="textarea-wrapper">
+                                <label for="tweet-textarea" class="visually-hidden">Tweet content</label>
+                                <textarea id="tweet-textarea" placeholder="Compose your post..." maxlength="400"></textarea>
+                                <div class="char-counter-bar">
+                                    <div class="progress-ring-container">
+                                        <svg class="progress-ring" width="24" height="24">
+                                            <circle class="progress-ring-circle-bg" stroke="rgba(255,255,255,0.08)" stroke-width="2.5" fill="transparent" r="9" cx="12" cy="12"/>
+                                            <circle id="progress-circle" class="progress-ring-circle" stroke="#3b82f6" stroke-width="2.5" fill="transparent" r="9" cx="12" cy="12"/>
+                                        </svg>
+                                        <span id="char-counter" class="char-count-text">280</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="composer-controls">
+                                <button id="btn-add-hashtags" class="btn-secondary" title="Append #BigQuery #GoogleCloud">
+                                    + Add Tags
+                                </button>
+                                <button id="btn-shorten" class="btn-secondary" title="Shorten content to fit text limit">
+                                    Auto-Shorten
+                                </button>
+                                <button id="btn-reset-tweet" class="btn-secondary" title="Reset tweet to default generated text">
+                                    Reset Text
+                                </button>
+                            </div>
+
+                            <div class="action-buttons-group">
+                                <button id="btn-copy-tweet" class="btn-action-primary btn-copy">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                    </svg>
+                                    <span id="copy-btn-text">Copy Post Text</span>
+                                </button>
+                                
+                                <button id="btn-share-tweet" class="btn-action-primary btn-tweet">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                                    </svg>
+                                    <span>Share on X</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </main>
+
+    <footer class="app-footer">
+        <div class="footer-container">
+            <p>BigQuery Release Notes Explorer &bull; Built with Flask &amp; Vanilla Web Technologies</p>
+            <p class="footer-source">Data source: <a href="https://docs.cloud.google.com/feeds/bigquery-release-notes.xml" target="_blank" rel="noopener noreferrer">Official Google Cloud Feed</a></p>
+        </div>
+    </footer>
+
+    <!-- App Script -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
